@@ -30,7 +30,7 @@ flowchart LR
     assistant["AI assistant<br/>(Claude Desktop, Claude Code)"]
     mcp["MCP server<br/>packages/mcp"]
   end
-  subgraph stack["Hosted stack (Docker Compose, GKE in phase 4)"]
+  subgraph stack["Hosted stack (Docker Compose; GKE planned)"]
     nginx["nginx<br/>serves the React app"]
     api["NestJS API<br/>packages/api"]
   end
@@ -53,7 +53,7 @@ One rules engine, three ways in. Checks that may involve a key run where the key
 your browser, or in the MCP server on your machine. The hosted API only ever calls DHL with DHL's
 public demo-key.
 
-## The rules engine (phase 1)
+## The rules engine
 
 `packages/rules` is a TypeScript library with no runtime dependencies. It runs in Node and in
 the browser.
@@ -94,7 +94,7 @@ explain({ status: 400, body: '{"detail":"998: ShipTimeStamp is not well formatte
 - **Nothing calls DHL.** The checks work without a DHL account, which matters because MyDHL API
   credentials are only issued to DHL Express customers.
 
-## The web app and API (phase 2)
+## The web app and API
 
 - **`packages/web`**: React 19 and Vite. Paste a request (or a curl command) to check it, or paste
   DHL's error response to have it explained. Both run **in your browser**, so a key in a pasted
@@ -119,7 +119,7 @@ explain({ status: 400, body: '{"detail":"998: ShipTimeStamp is not well formatte
   non-root, read-only, with all capabilities dropped; Compose publishes the app on localhost
   only. nginx sets a strict Content Security Policy for the app.
 
-## The MCP server (phase 3)
+## The MCP server
 
 `packages/mcp` lets an AI assistant (Claude Desktop, Claude Code, or any MCP client) use the same
 checks while it helps you build or debug a DHL integration. It runs on your machine over stdio.
