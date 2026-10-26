@@ -164,3 +164,9 @@ The end-to-end suite never calls DHL: `compose.e2e.yaml` points the API at
 2. NestJS API and React web app, with Playwright tests
 3. MCP server, so an AI assistant can run the same checks with your own key, locally (this phase)
 4. Deployment to Google Kubernetes Engine with Terraform and GitHub Actions
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The licence covers this code only: DHL's names, API specifications and
+documentation belong to DHL, and the error catalogue quotes them briefly, with links, to explain
+their errors.

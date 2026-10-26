@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Web app for Integration Doctor for DHL APIs. Checks run in the browser; only the demo-key probe calls the API.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

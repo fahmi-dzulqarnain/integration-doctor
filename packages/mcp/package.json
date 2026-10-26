@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "MCP server for Integration Doctor for DHL APIs: lets an AI assistant check DHL requests, explain DHL errors and, with your own key, make read-only live checks from your machine.",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "integration-doctor-mcp": "dist/src/index.js"

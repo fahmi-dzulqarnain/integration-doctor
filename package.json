@@ -2,6 +2,7 @@
   "name": "integration-doctor",
   "private": true,
   "description": "Integration Doctor for DHL APIs: checks a DHL API request before you send it, and explains DHL's errors in plain language.",
+  "license": "MIT",
   "type": "module",
   "workspaces": [
     "packages/*"

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "HTTP API for Integration Doctor for DHL APIs: diagnose a request, explain an error, and probe Shipment Tracking with DHL's public demo-key.",
+  "license": "MIT",
   "type": "module",
   "main": "dist/src/main.js",
   "scripts": {
