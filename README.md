@@ -6,6 +6,9 @@ language, with a link to where each explanation comes from.
 > Not affiliated with, endorsed by, or sponsored by DHL or Deutsche Post DHL Group. "DHL" is
 > their trademark and is used here only to say which APIs this tool works with.
 
+![The web app checking a MyDHL shipment request, explaining DHL error 998, and making a live
+Shipment Tracking call with DHL's demo-key](docs/demo.gif)
+
 ## Why
 
 Integrating DHL's APIs fails in a handful of ways, again and again, with terse answers:
@@ -17,6 +20,38 @@ Integrating DHL's APIs fails in a handful of ways, again and again, with terse a
 
 Each of these is documented somewhere, in DHL's API specifications, its support articles, or an
 integrator's help centre, but rarely next to the error. This tool puts them together.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph you["Your machine"]
+    browser["Browser"]
+    assistant["AI assistant<br/>(Claude Desktop, Claude Code)"]
+    mcp["MCP server<br/>packages/mcp"]
+  end
+  subgraph stack["Hosted stack (Docker Compose, GKE in phase 4)"]
+    nginx["nginx<br/>serves the React app"]
+    api["NestJS API<br/>packages/api"]
+  end
+  rules[["Rules engine and error catalogue<br/>packages/rules"]]
+  tracking[("DHL Shipment Tracking")]
+  mydhl[("DHL MyDHL API")]
+
+  browser -- "HTTPS" --> nginx
+  nginx -- "/api/*" --> api
+  assistant -- "stdio" --> mcp
+  browser -. "runs checks in the page" .-> rules
+  api -. uses .-> rules
+  mcp -. uses .-> rules
+  api -- "demo-key only, paced" --> tracking
+  mcp -- "your key, from env" --> tracking
+  mcp -- "validateDataOnly=true" --> mydhl
+```
+
+One rules engine, three ways in. Checks that may involve a key run where the key already is: in
+your browser, or in the MCP server on your machine. The hosted API only ever calls DHL with DHL's
+public demo-key.
 
 ## The rules engine (phase 1)
 
@@ -60,12 +95,6 @@ explain({ status: 400, body: '{"detail":"998: ShipTimeStamp is not well formatte
   credentials are only issued to DHL Express customers.
 
 ## The web app and API (phase 2)
-
-```
-browser ── nginx (web container, :8080) ──┬── static React app: diagnose and explain run here
-                                          └── /api/* ──► NestJS (api container, :3000) ──► DHL Shipment Tracking
-                                                                                          (demo-key only, paced)
-```
 
 - **`packages/web`**: React 19 and Vite. Paste a request (or a curl command) to check it, or paste
   DHL's error response to have it explained. Both run **in your browser**, so a key in a pasted
@@ -118,6 +147,19 @@ npm run build
 node packages/mcp/dist/src/index.js --help
 ```
 
+An assistant asking `explain_error` about a MyDHL 996 gets:
+
+```text
+API: MyDHL API
+DHL said: "996: The requested product(s) not available for the requested pickup date."
+Error codes: 996
+Known errors that match:
+996: Product not available on the pickup date (id mydhl.996)
+   The product cannot be picked up on plannedShippingDateAndTime.
+   Likely causes: The date is a weekend or a public holiday. | The time is after the pickup cut-off for that location.
+   Fixes: Move the date to the next working day, or ask GET /products what is available on that date.
+```
+
 Claude Code: `claude mcp add integration-doctor -e DHL_API_KEY=<your key> -- node <repo>/packages/mcp/dist/src/index.js`.
 Claude Desktop, in `claude_desktop_config.json`:
 
@@ -150,6 +192,9 @@ npm run dev -w @integration-doctor/web
 npm run stack:up
 npm run stack:down
 
+# Re-record docs/demo.gif (needs the stack running and ffmpeg; makes one demo-key call)
+npm run demo:record
+
 # End-to-end tests: builds the stack with a stand-in for DHL, runs Playwright, tears it down
 npx playwright install chromium
 npm run e2e
@@ -160,10 +205,12 @@ The end-to-end suite never calls DHL: `compose.e2e.yaml` points the API at
 
 ## Roadmap
 
-1. Rules engine and error catalogue
-2. NestJS API and React web app, with Playwright tests
-3. MCP server, so an AI assistant can run the same checks with your own key, locally (this phase)
-4. Deployment to Google Kubernetes Engine with Terraform and GitHub Actions
+- [x] Rules engine and error catalogue
+- [x] NestJS API and React web app, with Playwright tests
+- [x] MCP server, so an AI assistant can run the same checks with your own key, locally
+- [x] Demo and architecture diagram
+- [ ] Deployment to Google Kubernetes Engine with Terraform, and CI/CD with GitHub Actions
+- [ ] Optional AI explanations in the web app, grounded in DHL's documentation; rules still decide every finding
 
 ## Licence
 

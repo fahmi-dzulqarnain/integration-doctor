@@ -18,7 +18,8 @@
     "stack:up": "docker compose up -d --build --wait",
     "stack:down": "docker compose down",
     "e2e": "docker compose -f compose.yaml -f compose.e2e.yaml up -d --build --wait && playwright test; status=$?; docker compose -f compose.yaml -f compose.e2e.yaml down; exit $status",
-    "typecheck:e2e": "tsc -p e2e"
+    "typecheck:e2e": "tsc -p e2e",
+    "demo:record": "node scripts/record-demo.mjs"
   },
   "engines": {
     "node": ">=20"
