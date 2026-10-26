@@ -1,0 +1,5 @@
+# Placeholder credentials in end-to-end tests (curl -u apiUser:apiPassword, Bearer your-api-key), not secrets.
+b5877639b9c14750792b8189eeffae59bdbff921:e2e/check-request.spec.ts:curl-auth-user:21
+b5877639b9c14750792b8189eeffae59bdbff921:e2e/check-request.spec.ts:curl-auth-header:15
+e2e/check-request.spec.ts:curl-auth-header:15
+e2e/check-request.spec.ts:curl-auth-user:21
