@@ -1,0 +1,19 @@
+# Overlay for end-to-end tests: the API calls a stub instead of DHL.
+services:
+  dhl-stub:
+    image: node:24-alpine
+    command: ["node", "/stub/dhl-stub.mjs"]
+    volumes:
+      - ./e2e/dhl-stub.mjs:/stub/dhl-stub.mjs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/health"]
+      interval: 2s
+      retries: 10
+
+  api:
+    environment:
+      DHL_TRACKING_URL: http://dhl-stub:8081/track/shipments
+      PROBE_INTERVAL_MS: "4000"
+    depends_on:
+      dhl-stub:
+        condition: service_healthy

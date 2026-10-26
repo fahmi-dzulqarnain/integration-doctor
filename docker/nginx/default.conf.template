@@ -1,0 +1,35 @@
+server {
+    listen 8080;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # The API sends its own security headers (helmet), so none are added here.
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host $host;
+        # Replaced, not appended: the API trusts exactly one hop, so a client cannot add its own.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        client_max_body_size 1m;
+    }
+
+    # Vite puts a content hash in every asset name, so assets never change.
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri /index.html;
+    }
+}

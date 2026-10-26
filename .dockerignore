@@ -1,0 +1,16 @@
+# Allowlist: only what the images build from.
+*
+!package.json
+!package-lock.json
+!packages/rules/package.json
+!packages/rules/tsconfig*.json
+!packages/rules/src/
+!packages/api/package.json
+!packages/api/tsconfig*.json
+!packages/api/src/
+!packages/web/package.json
+!packages/web/tsconfig.json
+!packages/web/index.html
+!packages/web/vite.config.ts
+!packages/web/src/
+!docker/nginx/

@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    // NestJS reads constructor parameter types at runtime to inject dependencies.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    // DTO properties are filled in by class-transformer, not by a constructor.
+    "strictPropertyInitialization": false,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "test", "vitest.config.ts", "eslint.config.js"]
+}

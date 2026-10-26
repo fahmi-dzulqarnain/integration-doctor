@@ -18,7 +18,7 @@ Integrating DHL's APIs fails in a handful of ways, again and again, with terse a
 Each of these is documented somewhere, in DHL's API specifications, its support articles, or an
 integrator's help centre, but rarely next to the error. This tool puts them together.
 
-## What it does (phase 1: the rules engine)
+## The rules engine (phase 1)
 
 `packages/rules` is a TypeScript library with no runtime dependencies. It runs in Node and in
 the browser.
@@ -59,19 +59,65 @@ explain({ status: 400, body: '{"detail":"998: ShipTimeStamp is not well formatte
 - **Nothing calls DHL.** The checks work without a DHL account, which matters because MyDHL API
   credentials are only issued to DHL Express customers.
 
+## The web app and API (phase 2)
+
+```
+browser ── nginx (web container, :8080) ──┬── static React app: diagnose and explain run here
+                                          └── /api/* ──► NestJS (api container, :3000) ──► DHL Shipment Tracking
+                                                                                          (demo-key only, paced)
+```
+
+- **`packages/web`**: React 19 and Vite. Paste a request (or a curl command) to check it, or paste
+  DHL's error response to have it explained. Both run **in your browser**, so a key in a pasted
+  request never leaves the page. A third tab makes a live call to DHL with DHL's public
+  `demo-key` through the API. A pasted curl command is read the way bash would read it,
+  including Chrome's "Copy as cURL" output for bash and for Windows cmd.
+- **`packages/api`**: NestJS 12. The same checks over HTTP for scripts and CI
+  (`POST /api/diagnose`, `POST /api/explain`, `GET /api/catalogue`), the live probe
+  (`POST /api/probe/tracking`), a health check, and OpenAPI docs at `/api/docs`.
+  - The probe only ever sends `demo-key` and rejects any other field, because DHL's terms don't
+    allow sharing API keys with a third party. Live checks with your own key will come with the
+    MCP server, which runs on your machine.
+  - Calls to DHL are paced to the demo-key's published limits (one per 5 seconds, 250 a day,
+    reset at 00:00 GMT) and are never cached. Each client may make 20 probe calls an hour, so
+    one script cannot spend everyone's daily quota. The pacing lives in the API process, so it
+    holds for a single instance; more replicas need a shared counter.
+  - Behind nginx the API trusts exactly one proxy hop (`TRUST_PROXY_HOPS`), and nginx replaces
+    `X-Forwarded-For` rather than appending to it, so clients cannot pick their own rate-limit key.
+  - Request validation (class-validator, unknown fields rejected), helmet headers, per-client
+    rate limiting, and no logging of request bodies.
+- **Containers**: multi-stage images on `node:24-alpine` and `nginx-unprivileged`, running as
+  non-root, read-only, with all capabilities dropped; Compose publishes the app on localhost
+  only. nginx sets a strict Content Security Policy for the app.
+
 ## Development
 
 ```bash
 npm install
-npm test          # Vitest
-npm run lint      # ESLint, strict type-checked
+npm test               # Vitest: rules, API and web unit tests
+npm run lint           # ESLint, strict type-checked
 npm run typecheck
 npm run build
+
+# Local development: API on :3000, web on :5173 (proxies /api)
+npm run start -w @integration-doctor/api   # after npm run build
+npm run dev -w @integration-doctor/web
+
+# The full stack in Docker on http://localhost:8080
+npm run stack:up
+npm run stack:down
+
+# End-to-end tests: builds the stack with a stand-in for DHL, runs Playwright, tears it down
+npx playwright install chromium
+npm run e2e
 ```
+
+The end-to-end suite never calls DHL: `compose.e2e.yaml` points the API at
+`e2e/dhl-stub.mjs`, so tests don't spend the shared demo-key quota.
 
 ## Roadmap
 
-1. Rules engine and error catalogue (this package)
-2. NestJS API and React web app, with Playwright tests
+1. Rules engine and error catalogue
+2. NestJS API and React web app, with Playwright tests (this phase)
 3. MCP server, so an AI assistant can run the same checks with your own key, locally
 4. Deployment to Google Kubernetes Engine with Terraform and GitHub Actions
