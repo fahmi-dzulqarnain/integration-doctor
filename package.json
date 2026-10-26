@@ -5,13 +5,16 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/rules",
+    "packages/api",
+    "packages/mcp",
+    "packages/web"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "lint": "npm run lint --workspaces",
-    "typecheck": "npm run typecheck --workspaces",
-    "test": "npm run test --workspaces",
+    "lint": "npm run build -w @integration-doctor/rules && npm run lint --workspaces",
+    "typecheck": "npm run build -w @integration-doctor/rules && npm run typecheck --workspaces",
+    "test": "npm run build -w @integration-doctor/rules && npm run test --workspaces",
     "stack:up": "docker compose up -d --build --wait",
     "stack:down": "docker compose down",
     "e2e": "docker compose -f compose.yaml -f compose.e2e.yaml up -d --build --wait && playwright test; status=$?; docker compose -f compose.yaml -f compose.e2e.yaml down; exit $status",
