@@ -2,7 +2,7 @@ import { BadGatewayException, HttpException, HttpStatus, Inject, Injectable } fr
 import { diagnose, explain, type Diagnosis, type Explanation } from '@integration-doctor/rules';
 import { APP_CONFIG, type AppConfig } from '../config.js';
 import { ProbeDto } from '../dto.js';
-import { Pacer } from './pacer.js';
+import { Pacer } from '@integration-doctor/rules';
 
 /** Response headers worth showing: the content type and DHL's quota counters. */
 const SHOWN_HEADERS = /^(content-type|ratelimit-.*|x-ratelimit-.*|retry-after)$/i;

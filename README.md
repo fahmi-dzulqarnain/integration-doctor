@@ -76,7 +76,7 @@ browser ── nginx (web container, :8080) ──┬── static React app: di
   (`POST /api/diagnose`, `POST /api/explain`, `GET /api/catalogue`), the live probe
   (`POST /api/probe/tracking`), a health check, and OpenAPI docs at `/api/docs`.
   - The probe only ever sends `demo-key` and rejects any other field, because DHL's terms don't
-    allow sharing API keys with a third party. Live checks with your own key will come with the
+    allow sharing API keys with a third party. Live checks with your own key happen in the
     MCP server, which runs on your machine.
   - Calls to DHL are paced to the demo-key's published limits (one per 5 seconds, 250 a day,
     reset at 00:00 GMT) and are never cached. Each client may make 20 probe calls an hour, so
@@ -90,11 +90,54 @@ browser ── nginx (web container, :8080) ──┬── static React app: di
   non-root, read-only, with all capabilities dropped; Compose publishes the app on localhost
   only. nginx sets a strict Content Security Policy for the app.
 
+## The MCP server (phase 3)
+
+`packages/mcp` lets an AI assistant (Claude Desktop, Claude Code, or any MCP client) use the same
+checks while it helps you build or debug a DHL integration. It runs on your machine over stdio.
+
+| Tool | Does | Calls DHL |
+|---|---|---|
+| `diagnose_request` | Checks a request before it is sent | No |
+| `explain_error` | Explains an error DHL returned, with causes, fixes and sources | No |
+| `search_known_errors` | Looks up the error catalogue by code, words or API | No |
+| `track_shipment` | Shipment Tracking with your key, or DHL's demo-key | Yes, read-only |
+| `validate_mydhl_shipment` | MyDHL `POST /shipments` with `validateDataOnly=true`: DHL validates, creates nothing | Yes, only if MyDHL credentials are set |
+
+The catalogue is also a resource, `integration-doctor://catalogue`.
+
+- **Keys stay on your machine.** Credentials come only from the server's environment; no tool
+  takes one as input, so they never enter the conversation. Results show where a key came from
+  (`<your key from DHL_API_KEY, ending 9876>`), never the key.
+- **Nothing is created at DHL.** Tracking only reads, and the MyDHL tool always sends
+  `validateDataOnly=true`. Live calls are paced to DHL's published limits.
+- **Rules decide, the assistant explains.** The server's instructions tell the assistant to quote
+  findings and their sources, and to say so when it adds its own reading.
+
+```bash
+npm run build
+node packages/mcp/dist/src/index.js --help
+```
+
+Claude Code: `claude mcp add integration-doctor -e DHL_API_KEY=<your key> -- node <repo>/packages/mcp/dist/src/index.js`.
+Claude Desktop, in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "integration-doctor": {
+      "command": "node",
+      "args": ["<repo>/packages/mcp/dist/src/index.js"],
+      "env": { "DHL_API_KEY": "<optional: your Shipment Tracking key>" }
+    }
+  }
+}
+```
+
 ## Development
 
 ```bash
 npm install
-npm test               # Vitest: rules, API and web unit tests
+npm test               # Vitest: rules, API, web and MCP server tests
 npm run lint           # ESLint, strict type-checked
 npm run typecheck
 npm run build
@@ -118,6 +161,6 @@ The end-to-end suite never calls DHL: `compose.e2e.yaml` points the API at
 ## Roadmap
 
 1. Rules engine and error catalogue
-2. NestJS API and React web app, with Playwright tests (this phase)
-3. MCP server, so an AI assistant can run the same checks with your own key, locally
+2. NestJS API and React web app, with Playwright tests
+3. MCP server, so an AI assistant can run the same checks with your own key, locally (this phase)
 4. Deployment to Google Kubernetes Engine with Terraform and GitHub Actions

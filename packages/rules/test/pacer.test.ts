@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Pacer } from '../src/probe/pacer.js';
+import { Pacer } from '../src/pacer.js';
 
 describe('Pacer', () => {
   it('allows one call per interval', () => {

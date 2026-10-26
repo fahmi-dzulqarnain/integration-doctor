@@ -4,6 +4,7 @@ export { detect } from './detect.js';
 export { CATALOGUE } from './catalogue/entries.js';
 export { SOURCES } from './sources.js';
 export { TRACKING_SERVICES } from './rules/tracking.js';
+export { Pacer } from './pacer.js';
 export type {
   CatalogueEntry,
   Detection,

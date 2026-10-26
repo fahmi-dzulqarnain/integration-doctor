@@ -37,6 +37,17 @@ describe('MyDHL authentication', () => {
     expect(ids(run(validShipment(), { headers }))).toContain('auth.mydhl-malformed-basic');
   });
 
+  it('accepts a placeholder such as Basic <credentials>', () => {
+    const headers = { Authorization: 'Basic <credentials>', 'Content-Type': 'application/json', 'x-version': '3.4.0' };
+    const findings = ids(run(validShipment(), { headers }));
+    expect(findings).not.toContain('auth.mydhl-malformed-basic');
+    // Still noted: the brackets left in a real request make DHL answer 401.
+    expect(findings).toContain('auth.placeholder');
+    // A half-written placeholder is still caught.
+    const broken = { ...headers, Authorization: 'Basic <credentials' };
+    expect(ids(run(validShipment(), { headers: broken }))).toContain('auth.mydhl-malformed-basic');
+  });
+
   it('does not ask for credentials on the mock server', () => {
     const findings = run(validShipment(), {
       url: 'https://api-mock.dhl.com/mydhlapi/shipments?validateDataOnly=true',

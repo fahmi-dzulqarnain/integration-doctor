@@ -1,7 +1,7 @@
 /**
- * Keeps calls to DHL inside the demo-key's published limits: one call per interval and a daily
- * quota that resets at 00:00 GMT. Everyone shares the demo-key, so the API spends its share
- * slowly instead of queueing callers.
+ * Keeps calls to DHL inside a key's published limits, such as Shipment Tracking's one call per
+ * 5 seconds and 250 a day, reset at 00:00 GMT. Callers that come too soon are told how long to
+ * wait instead of being queued.
  */
 export class Pacer {
   private last = Number.NEGATIVE_INFINITY;

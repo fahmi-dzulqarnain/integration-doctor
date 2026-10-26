@@ -18,6 +18,22 @@ export function decodeBasic(authorization: string | undefined): { user: string }
   }
 }
 
+/**
+ * `Basic <credentials>`: a placeholder people (and assistants) use instead of a real secret.
+ * The scheme is right and there is nothing to decode, so it gets a note instead of an error;
+ * the note matters because the same brackets left in a real request make DHL answer 401.
+ */
+const PLACEHOLDER_BASIC = /^Basic\s+<[^<>]+>\s*$/i;
+
+const placeholderNote = (source: Finding['sources'][number]): Finding => ({
+  ruleId: 'auth.placeholder',
+  severity: 'info',
+  title: 'The Basic credential is a placeholder',
+  detail: 'The checks treat "Basic <…>" as a stand-in for real credentials. Sent as it is, with the angle brackets, DHL rejects it with 401.',
+  fix: 'When you send the request, replace the whole <…>, brackets included, with base64(username + ":" + password).',
+  sources: [source],
+});
+
 /** Tracking and Location Finder: an API key in the `DHL-API-Key` header. */
 const keyHeaderRules: Rule = ({ detection, headers }) => {
   if (detection.api !== 'tracking' && detection.api !== 'location-finder') return [];
@@ -80,6 +96,7 @@ const basicRules: Rule = ({ detection, headers }) => {
       sources: [SOURCES.mydhlReference, SOURCES.mydhlNonCustomer],
     }];
   }
+  if (PLACEHOLDER_BASIC.test(authorization)) return [placeholderNote(SOURCES.mydhlReference)];
   if (!decodeBasic(authorization)) {
     return [{
       ruleId: 'auth.mydhl-malformed-basic',
@@ -100,8 +117,9 @@ const parcelDeRules: Rule = ({ detection, headers }) => {
   if (detection.operation === 'GET /' || detection.operation === 'GET /labels') return [];
   const authorization = headers.get('authorization') ?? '';
   if (/^Bearer\s+\S+/i.test(authorization)) return [];
-  if (decodeBasic(authorization) && headers.has(API_KEY_HEADER)) {
-    return [{
+  const placeholder = PLACEHOLDER_BASIC.test(authorization);
+  if ((decodeBasic(authorization) || placeholder) && headers.has(API_KEY_HEADER)) {
+    return [...(placeholder ? [placeholderNote(SOURCES.parcelDeReference)] : []), {
       ruleId: 'auth.parcel-de-basic',
       severity: 'warning',
       title: 'Basic authentication is being retired here',
